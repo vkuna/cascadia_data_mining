@@ -1,0 +1,2 @@
+model_checkpoint_path: "drop_unet_logfeat_10000_pn_eps_5_std_0.2.tf"
+all_model_checkpoint_paths: "drop_unet_logfeat_10000_pn_eps_5_std_0.2.tf"
