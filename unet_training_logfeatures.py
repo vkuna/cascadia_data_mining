@@ -23,7 +23,9 @@ train=int(sys.argv[3]) #True # do you want to train?
 drop=int(sys.argv[4]) #True # drop?
 plots=int(sys.argv[5]) #False # do you want to make some plots?
 resume=int(sys.argv[6]) #False # resume training
+large=int(sys.argv[7]) # large unet
 
+fac=8
 epos=50 # how many epocs?
 std=0.1 # how long do you want the gaussian STD to be?
 epsilon=1e-6
@@ -34,6 +36,7 @@ print("train "+str(train))
 print("drop "+str(drop))
 print("plots "+str(plots))
 print("resume "+str(resume))
+print("large "+str(large))
 
 # LOAD THE DATA
 if ponly:
@@ -55,6 +58,9 @@ else:
         x_data, _ = pickle.load( open( 'pnsn_ncedc_S_training_data.pkl', 'rb' ) ) 
         model_save_file="unet_logfeat_250000_sn_eps_"+str(epos)+"_std_"+str(std)+".tf"
         
+if large:
+    model_save_file="large_"+str(fac)+"_"+model_save_file
+
 if drop:
     model_save_file="drop_"+model_save_file
 
@@ -75,6 +81,7 @@ features=np.concatenate((n_data,x_data))
 target=np.concatenate((np.zeros(n_data.shape[0]),np.ones(x_data.shape[0])))
 
 # MAKE TRAINING AND TESTING DATA
+np.random.seed(0)
 inds=np.arange(target.shape[0])
 np.random.shuffle(inds)
 train_inds=inds[:int(0.75*len(inds))]
@@ -152,10 +159,16 @@ if plots:
 
 # BUILD THE MODEL
 if drop:
-    model=unet_tools.make_unet_drop()    
+    if large:
+        model=unet_tools.make_large_unet_drop(fac)  
+    else:
+        model=unet_tools.make_unet_drop()    
 else:
-    model=unet_tools.make_unet()
-
+    if large:
+        model=unet_tools.make_large_unet(fac)
+    else:
+        model=unet_tools.make_unet()
+        
 # ADD SOME CHECKPOINTS
 checkpoint_filepath = './checks/'+model_save_file+'_{epoch:04d}.ckpt'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -182,27 +195,27 @@ else:
     print('Loading training results from '+model_save_file)
     model.load_weights("./"+model_save_file)
 
-# See how things went
-my_test_data=my_data_generator(20,x_test,y_test,valid=True)
-x,y=next(my_test_data)
+# # See how things went
+# my_test_data=my_data_generator(20,x_test,y_test,valid=True)
+# x,y=next(my_test_data)
 
-test_predictions=model.predict(x)
+# test_predictions=model.predict(x)
 
-# PLOT A FEW EXAMPLES
-for ind in range(20):
-    fig, ax1 = plt.subplots()
-    t=1/40*np.arange(x.shape[1])
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('Amplitude')
-    trace=np.multiply(np.power(x[ind,:,0],10),x[ind,:,1])
-    ax1.plot(t, trace, color='tab:red') #, label='data')
-    ax1.tick_params(axis='y')
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    ax2.set_ylabel('Prediction')  # we already handled the x-label with ax1
-    ax2.plot(t, test_predictions[ind,:], color='tab:blue') #, label='prediction')
-    ax2.plot(t, y[ind,:], color='black', linestyle='--') #, label='target')
-    ax2.tick_params(axis='y')
-    ax2.set_ylim((-0.1,2.1))
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.legend(('prediction','target'))
-    plt.show()
+# # PLOT A FEW EXAMPLES
+# for ind in range(20):
+#     fig, ax1 = plt.subplots()
+#     t=1/40*np.arange(x.shape[1])
+#     ax1.set_xlabel('Time (s)')
+#     ax1.set_ylabel('Amplitude')
+#     trace=np.multiply(np.power(x[ind,:,0],10),x[ind,:,1])
+#     ax1.plot(t, trace, color='tab:red') #, label='data')
+#     ax1.tick_params(axis='y')
+#     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+#     ax2.set_ylabel('Prediction')  # we already handled the x-label with ax1
+#     ax2.plot(t, test_predictions[ind,:], color='tab:blue') #, label='prediction')
+#     ax2.plot(t, y[ind,:], color='black', linestyle='--') #, label='target')
+#     ax2.tick_params(axis='y')
+#     ax2.set_ylim((-0.1,2.1))
+#     fig.tight_layout()  # otherwise the right y-label is slightly clipped
+#     plt.legend(('prediction','target'))
+#     plt.show()
