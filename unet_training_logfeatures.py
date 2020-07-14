@@ -17,15 +17,14 @@ import sys
 import unet_tools
 
 # OPTIONS
-subset=int(sys.argv[1]) #True # train on a subset or the full monty?
-ponly=int(sys.argv[2]) #True # 1 - P+Noise, 2 - S+noise
-train=int(sys.argv[3]) #True # do you want to train?
-drop=int(sys.argv[4]) #True # drop?
-plots=int(sys.argv[5]) #False # do you want to make some plots?
-resume=int(sys.argv[6]) #False # resume training
-large=int(sys.argv[7]) # large unet
+subset=1 #int(sys.argv[1]) #True # train on a subset or the full monty?
+ponly=1 #int(sys.argv[2]) #True # 1 - P+Noise, 2 - S+noise
+train=1 #int(sys.argv[3]) #True # do you want to train?
+drop=0 #int(sys.argv[4]) #True # drop?
+plots=0 #int(sys.argv[5]) #False # do you want to make some plots?
+resume=0 #int(sys.argv[6]) #False # resume training
+large=1 #int(sys.argv[7]) # large unet
 
-fac=8
 epos=50 # how many epocs?
 std=0.1 # how long do you want the gaussian STD to be?
 epsilon=1e-6
@@ -59,6 +58,7 @@ else:
         model_save_file="unet_logfeat_250000_sn_eps_"+str(epos)+"_std_"+str(std)+".tf"
         
 if large:
+    fac=large
     model_save_file="large_"+str(fac)+"_"+model_save_file
 
 if drop:
