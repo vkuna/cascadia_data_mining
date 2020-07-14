@@ -3,7 +3,7 @@
 """
 Created on Tue Jun 16 11:27:07 2020
 
-Postprocess training results
+Train a CNN to pick P and S wave arrivals with log features
 
 @author: amt
 """
@@ -15,15 +15,16 @@ import pickle
 from scipy import signal
 import sys
 import unet_tools
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 # OPTIONS
-subset=0 # train on a subset or the full monty?
-ponly=1 # 1 - P+Noise, 2 - S+noise
-train=0 #True # do you want to train?
-drop=0 # drop?
-plots=0 # do you want to make some plots?
-resume=0 # resume training
+subset=0 #int(sys.argv[1]) #True # train on a subset or the full monty?
+ponly=1 #int(sys.argv[2]) #True # 1 - P+Noise, 2 - S+noise
+train=0 #int(sys.argv[3]) #True # do you want to train?
+drop=0 #int(sys.argv[4]) #True # drop?
+plots=0 #int(sys.argv[5]) #False # do you want to make some plots?
+resume=0 #int(sys.argv[6]) #False # resume training
+large=2 #int(sys.argv[7]) # large unet
 
 epos=50 # how many epocs?
 std=0.1 # how long do you want the gaussian STD to be?
@@ -35,6 +36,7 @@ print("train "+str(train))
 print("drop "+str(drop))
 print("plots "+str(plots))
 print("resume "+str(resume))
+print("large "+str(large))
 
 # LOAD THE DATA
 if ponly:
@@ -56,6 +58,10 @@ else:
         x_data, _ = pickle.load( open( 'pnsn_ncedc_S_training_data.pkl', 'rb' ) ) 
         model_save_file="unet_logfeat_250000_sn_eps_"+str(epos)+"_std_"+str(std)+".tf"
         
+if large:
+    fac=large
+    model_save_file="large_"+str(fac)+"_"+model_save_file
+
 if drop:
     model_save_file="drop_"+model_save_file
 
@@ -131,33 +137,18 @@ def my_data_generator(batch_size,dataset,targets,valid=False):
 my_data=my_data_generator(32,x_train,y_train)
 x,y=next(my_data)
 
-# PLOT GENERATOR RESULTS
-if plots:
-    for ind in range(5):
-        fig, ax1 = plt.subplots()
-        t=1/40*np.arange(x.shape[1])
-        ax1.set_xlabel('Time (s)')
-        ax1.set_ylabel('Amplitude', color='tab:red')
-        ax1.plot(t, x[ind,:,0], color='tab:red') #, label='data')
-        ax1.plot(t, x[ind,:,1], color='tab:red') #, label='data')
-        ax1.tick_params(axis='y')
-        ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-        ax2.set_ylabel('Prediction', color='black')  # we already handled the x-label with ax1
-        ax2.plot(t, y[ind,:], color='black', linestyle='--') #, label='target')
-        ax2.plot(t, x[ind,:,0], color='tab:green') #, label='data')
-        ax2.plot(t, x[ind,:,1], color='tab:blue') #, label='data')
-        ax2.tick_params(axis='y')
-        #ax2.set_ylim((-0.1,2.1))
-        fig.tight_layout()  # otherwise the right y-label is slightly clipped
-        plt.legend(('target1','target2'))
-        plt.show()
-
 # BUILD THE MODEL
 if drop:
-    model=unet_tools.make_unet_drop()    
+    if large:
+        model=unet_tools.make_large_unet_drop(fac)  
+    else:
+        model=unet_tools.make_unet_drop()    
 else:
-    model=unet_tools.make_unet()
-
+    if large:
+        model=unet_tools.make_large_unet(fac)
+    else:
+        model=unet_tools.make_unet()
+        
 # ADD SOME CHECKPOINTS
 checkpoint_filepath = './checks/'+model_save_file+'_{epoch:04d}.ckpt'
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -184,34 +175,34 @@ else:
     print('Loading training results from '+model_save_file)
     model.load_weights("./"+model_save_file)
 
-# See how things went
-my_test_data=my_data_generator(20,x_test,y_test,valid=True)
-x,y=next(my_test_data)
+# # See how things went
+# my_test_data=my_data_generator(20,x_test,y_test,valid=True)
+# x,y=next(my_test_data)
 
-test_predictions=model.predict(x)
+# test_predictions=model.predict(x)
 
-# PLOT A FEW EXAMPLES
-for ind in range(5):
-    fig, ax1 = plt.subplots()
-    t=1/40*np.arange(x.shape[1])
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('Amplitude')
-    trace=np.multiply(np.power(x[ind,:,0],10),x[ind,:,1])
-    ax1.plot(t, trace, color='tab:red') #, label='data')
-    ax1.tick_params(axis='y')
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    ax2.set_ylabel('Prediction')  # we already handled the x-label with ax1
-    ax2.plot(t, test_predictions[ind,:], color='tab:blue') #, label='prediction')
-    ax2.plot(t, y[ind,:], color='black', linestyle='--') #, label='target')
-    ax2.tick_params(axis='y')
-    ax2.set_ylim((-0.1,2.1))
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.legend(('prediction','target'))
-    plt.show()
+# # PLOT A FEW EXAMPLES
+# for ind in range(20):
+#     fig, ax1 = plt.subplots()
+#     t=1/40*np.arange(x.shape[1])
+#     ax1.set_xlabel('Time (s)')
+#     ax1.set_ylabel('Amplitude')
+#     trace=np.multiply(np.power(x[ind,:,0],10),x[ind,:,1])
+#     ax1.plot(t, trace, color='tab:red') #, label='data')
+#     ax1.tick_params(axis='y')
+#     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+#     ax2.set_ylabel('Prediction')  # we already handled the x-label with ax1
+#     ax2.plot(t, test_predictions[ind,:], color='tab:blue') #, label='prediction')
+#     ax2.plot(t, y[ind,:], color='black', linestyle='--') #, label='target')
+#     ax2.tick_params(axis='y')
+#     ax2.set_ylim((-0.1,2.1))
+#     fig.tight_layout()  # otherwise the right y-label is slightly clipped
+#     plt.legend(('prediction','target'))
+#     plt.show()
 
 # GET PERFORMANCE STATS
 # this plots accuracy, precision, and recall for each model
-my_test_data=my_data_generator(10000,x_test,y_test,valid=True)
+my_test_data=my_data_generator(1000,x_test,y_test,valid=True)
 x,y=next(my_test_data)
 test_predictions=model.predict(x)
 threshs=np.arange(0.01,1,0.01)

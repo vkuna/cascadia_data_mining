@@ -1,2 +1,2 @@
-model_checkpoint_path: "drop_unet_logfeat_10000_pn_eps_5_std_0.2.tf"
-all_model_checkpoint_paths: "drop_unet_logfeat_10000_pn_eps_5_std_0.2.tf"
+model_checkpoint_path: "large_1_unet_logfeat_10000_pn_eps_10_std_0.1.tf"
+all_model_checkpoint_paths: "large_1_unet_logfeat_10000_pn_eps_10_std_0.1.tf"

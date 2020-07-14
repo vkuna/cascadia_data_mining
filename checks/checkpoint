@@ -1,0 +1,2 @@
+model_checkpoint_path: "large_1_unet_logfeat_10000_pn_eps_10_std_0.1.tf_0003.ckpt"
+all_model_checkpoint_paths: "large_1_unet_logfeat_10000_pn_eps_10_std_0.1.tf_0003.ckpt"
