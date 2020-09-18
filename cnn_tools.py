@@ -206,7 +206,7 @@ def make_training_data(df,sr,winsize,phase):
             t2-=120
         try: # try to get the data
             tr = client.get_waveforms(net, sta, "*", comp, t1-1, t2+1)
-            print('Tr has length '+str(len(tr)))
+            #print('Tr has length '+str(len(tr)))
         except:
             print("No data for "+net+" "+sta+" "+comp+" "+str(t1)+" "+str(t2))
         else:
@@ -224,14 +224,16 @@ def make_training_data(df,sr,winsize,phase):
         # get rid of things that have lengths less than the desired length
         if len(tr.data) != sr*winsize+1:
             st.remove(tr)
+    for tr in st: 
         # get rid of things that have all zeros
         if np.sum(tr.data)==len(tr.data):
             st.remove(tr)
+    for tr in st: 
         # get rid of things that NaNs
         if np.sum(np.isnan(tr.data))>0:
             st.remove(tr)
     st.detrend()
-    plot_training_data_streams(st,sr)
+    #plot_training_data_streams(st,sr)
     stout=np.zeros((len(st),sr*winsize+1))
     pors=np.zeros(len(st))
     for ii in range(len(st)):
