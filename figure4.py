@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 16 11:27:07 2020
-
-Train a CNN to pick P and S wave arrivals with log features
+Created on Tue Sep 15 14:25:25 2020
 
 @author: amt
 """
@@ -14,59 +12,57 @@ import numpy as np
 import pickle
 from scipy import signal
 import unet_tools
-from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 # OPTIONS
 subset=0 #True # train on a subset or the full monty?
 epos=50 # how many epocs?
 epsilon=1e-6
 firstflag=1
-save=0
 
 for sr in [100]: #, 100]:
-    for ponly in [1]:
     # LOAD THE DATA
-        file="testing_data_sr_"+str(sr)+"_ponly_"+str(ponly)+".pkl"
-        if save:
-            if sr==40:
-                if ponly:
-                    n_data, _ = pickle.load( open( 'pnsn_ncedc_N_training_data.pkl', 'rb' ) )
-                    x_data, _ = pickle.load( open( 'pnsn_ncedc_P_training_data.pkl', 'rb' ) ) 
-                else:
-                    n_data, _ = pickle.load( open( 'pnsn_ncedc_N_training_data.pkl', 'rb' ) )
-                    x_data, _ = pickle.load( open( 'pnsn_ncedc_S_training_data.pkl', 'rb' ) ) 
-            elif sr==100:
-                if ponly:
-                    n_data, _ = pickle.load( open( 'pnsn_ncedc_N_100_training_data.pkl', 'rb' ) )
-                    x_data, _ = pickle.load( open( 'pnsn_ncedc_P_100_training_data.pkl', 'rb' ) ) 
-                else:
-                    n_data, _ = pickle.load( open( 'pnsn_ncedc_N_100_training_data.pkl', 'rb' ) )
-                    x_data, _ = pickle.load( open( 'pnsn_ncedc_S_100_training_data.pkl', 'rb' ) ) 
-            
-            # MAKE FEATURES AND TARGET VECTOR N=0, P/S=2
-            print("MAKE FEATURES AND TARGET VECTOR")
-            features=np.concatenate((n_data,x_data))
-            target=np.concatenate((np.zeros(n_data.shape[0]),np.ones(x_data.shape[0])))
-            del n_data
-            del x_data
-            
-            # MAKE TRAINING AND TESTING DATA
-            print("MAKE TRAINING AND TESTING DATA")
-            np.random.seed(0)
-            inds=np.arange(target.shape[0])
-            np.random.shuffle(inds)
-            train_inds=inds[:int(0.75*len(inds))]
-            test_inds=inds[int(0.75*len(inds)):]
-            x_test=features[test_inds,:]
-            y_test=target[test_inds]
+    for ponly in [1]: # 1 - P+Noise, 2 - S+noise    
+        # print("LOADING DATA")
+        # if sr==40:
+        #     if ponly:
+        #         n_data, _ = pickle.load( open( 'pnsn_ncedc_N_training_data.pkl', 'rb' ) )
+        #         x_data, _ = pickle.load( open( 'pnsn_ncedc_P_training_data.pkl', 'rb' ) ) 
+        #     else:
+        #         n_data, _ = pickle.load( open( 'pnsn_ncedc_N_training_data.pkl', 'rb' ) )
+        #         x_data, _ = pickle.load( open( 'pnsn_ncedc_S_training_data.pkl', 'rb' ) ) 
+        # elif sr==100:
+        #     if ponly:
+        #         n_data, _ = pickle.load( open( 'pnsn_ncedc_N_100_training_data.pkl', 'rb' ) )
+        #         x_data, _ = pickle.load( open( 'pnsn_ncedc_P_100_training_data.pkl', 'rb' ) ) 
+        #     else:
+        #         n_data, _ = pickle.load( open( 'pnsn_ncedc_N_100_training_data.pkl', 'rb' ) )
+        #         x_data, _ = pickle.load( open( 'pnsn_ncedc_S_100_training_data.pkl', 'rb' ) ) 
         
-            # Saving the objects:
-            with open(file, 'wb') as f:  # Python 3: open(..., 'wb')
-                pickle.dump([x_test, y_test], f)
-        else:
-            # Getting back the objects:
-            with open(file, 'rb') as f:  # Python 3: open(..., 'rb')
-                x_test, y_test = pickle.load(f)
+        # # MAKE FEATURES AND TARGET VECTOR N=0, P/S=2
+        # print("MAKE FEATURES AND TARGET VECTOR")
+        # features=np.concatenate((n_data,x_data))
+        # target=np.concatenate((np.zeros(n_data.shape[0]),np.ones(x_data.shape[0])))
+        # del n_data
+        # del x_data
+        
+        # # MAKE TRAINING AND TESTING DATA
+        # print("MAKE TRAINING AND TESTING DATA")
+        # np.random.seed(0)
+        # inds=np.arange(target.shape[0])
+        # np.random.shuffle(inds)
+        # train_inds=inds[:int(0.75*len(inds))]
+        # test_inds=inds[int(0.75*len(inds)):]
+        # x_train=features[train_inds,:]
+        # y_train=target[train_inds]
+        # x_test=features[test_inds,:]
+        # y_test=target[test_inds]
+        
+        file="testing_data_sr_"+str(sr)+"_ponly_"+str(ponly)+".pkl"
+        # with open(file, 'wb') as f:  # Python 3: open(..., 'wb')
+        #     pickle.dump([x_test,y_test], f)
+        
+        with open(file, 'rb') as f:  # Python 3: open(..., 'rb')
+            x_test,y_test = pickle.load(f)
         
         # do the shifts and make batches
         print("SETTING UP GENERATOR")
@@ -76,6 +72,7 @@ for sr in [100]: #, 100]:
                     start_of_batch=0
                 else:
                     start_of_batch=np.random.choice(dataset.shape[0]-batch_size)
+
                 #print('start of batch: '+str(start_of_batch))
                 # grab batch
                 batch=dataset[start_of_batch:start_of_batch+batch_size,:]
@@ -110,10 +107,15 @@ for sr in [100]: #, 100]:
                 batch_out=np.array(batch_out)
                 yield(batch_out,new_batch_target)
         
-        
-        for drop in [0, 1]: # True # drop?
-            for large in [0.5, 1]: # large unet
-                for std in [0.05, 0.1, 0.2]: #[0.1, 0.2]: # how long do you want the gaussian STD to be?
+        fig2 = plt.figure(constrained_layout=True,figsize=(10,6))
+        gs = fig2.add_gridspec(1, 1)
+        ax1 = fig2.add_subplot(gs[0, 0])
+        colors = [[0.5,0,0],
+                  [0,0,0.5],
+                  [0.5,0.5,0]]
+        for drop in [1]: # True # drop?
+            for large in [0.5]: # large unet
+                for count, std in enumerate([0.05,0.2]): #[0.1, 0.2]: # how long do you want the gaussian STD to be?
                 
                     print("ponly "+str(ponly))
                     print("drop "+str(drop))
@@ -182,24 +184,6 @@ for sr in [100]: #, 100]:
                         x,y=next(my_test_data)
                         firstflag==0
                     test_predictions=model.predict(x)
-                    threshs=np.arange(0.01,1,0.01)
-                    metrics=np.zeros((len(threshs),3))
-                    for ii,thresh in enumerate(threshs):
-                        y_true=np.where(np.max(y,axis=1) > thresh, 1, 0)
-                        y_pred=np.where(np.max(test_predictions,axis=1) > thresh, 1, 0)
-                        metrics[ii,0]=accuracy_score(y_true,y_pred)
-                        metrics[ii,1]=precision_score(y_true,y_pred)
-                        metrics[ii,2]=recall_score(y_true,y_pred)
-                    
-                    plt.figure()
-                    plt.plot(threshs,metrics[:,1])
-                    plt.plot(threshs,metrics[:,2])
-                    plt.plot(threshs,metrics[:,0])
-                    plt.legend(('precision','recall','accuracy'))
-                    plt.title(model_save_file)
-                    plt.xlabel('Threshold value')
-                    plt.ylabel('Percent')
-                    plt.savefig('./result_figures/pra_'+model_save_file+'.png')
                     
                     # this looks at pick accuracy
                     y_true=np.where(np.max(y,axis=1) > 0.75, 1, 0)
@@ -208,29 +192,16 @@ for sr in [100]: #, 100]:
                     pickdiff=np.zeros(len(inds))
                     for ii,ind in enumerate(inds):
                         pickdiff[ii]=np.where(test_predictions[ind]==np.max(test_predictions[ind]))[0][0]-np.where(y[ind]==np.max(y[ind]))[0][0]
-                    plt.figure()
-                    plt.hist(pickdiff,bins=np.arange(-10.5,10.5,1), alpha=0.5, rwidth=0.8, density=True)
-                    plt.xticks((np.arange(-10, 12, step=2)))
-                    plt.xlabel("Predicted pick - Actual pick (samples)")
-                    plt.ylabel("Probability")
-                    plt.title(model_save_file)
-                    plt.text(-10,0.1,'%< 4 samples='+str(np.round(100*len(np.where(np.abs(pickdiff)<=4)[0])/len(pickdiff))/100))
-                    if sr==40:
-                        plt.text(-10,0.05,'%< 0.1 seconds='+str(np.round(100*len(np.where(np.abs(pickdiff)<=4)[0])/len(pickdiff))/100))  
-                    if sr==100:
-                        plt.text(-10,0.05,'%< 0.1 seconds='+str(np.round(100*len(np.where(np.abs(pickdiff)<=10)[0])/len(pickdiff))/100)) 
-                    plt.savefig('./result_figures/pick_accuracy_'+model_save_file+'.png')
-                    
-                    # training stats
-                    training_stats = np.genfromtxt("./result_files/"+model_save_file+'.csv', delimiter=',',skip_header=1)
-                    f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-                    ax1.plot(training_stats[:,0],training_stats[:,1])
-                    ax1.plot(training_stats[:,0],training_stats[:,3])
-                    ax1.legend(('acc','val_acc'))
-                    ax2.plot(training_stats[:,0],training_stats[:,2])
-                    ax2.plot(training_stats[:,0],training_stats[:,4])
-                    ax2.legend(('loss','val_loss'))
-                    ax2.set_xlabel('Epoch')
-                    ax1.set_title(model_save_file)
-                    f.savefig('./result_figures/training_stats_'+model_save_file+'.png')
-                    # len(np.where(np.abs(pickdiff)<=4)[0])/len(pickdiff)
+                    ax1.hist(pickdiff,bins=np.arange(-10.5,11.5,1), rwidth=0.8, density=True, color=colors[count], alpha=0.5, edgecolor='black', label="$\sigma$="+str(std))
+                    print(len(inds))
+                    # plt.text(-10,0.1,'%< 4 samples='+str(np.round(100*len(np.where(np.abs(pickdiff)<=4)[0])/len(pickdiff))/100))
+                    # if sr==40:
+                    #     plt.text(-10,0.05,'%< 0.1 seconds='+str(np.round(100*len(np.where(np.abs(pickdiff)<=4)[0])/len(pickdiff))/100))  
+                    # if sr==100:
+                    #     plt.text(-10,0.05,'%< 0.1 seconds='+str(np.round(100*len(np.where(np.abs(pickdiff)<=10)[0])/len(pickdiff))/100)) 
+        ax1.set_xticks((np.arange(-10, 12, step=2)))
+        ax1.set_xlabel("Predicted pick - Actual pick (samples)",fontsize=14)
+        ax1.set_ylabel("Probability",fontsize=14)
+        ax1.tick_params(axis="x", labelsize=14)
+        ax1.tick_params(axis="y", labelsize=14)
+        ax1.legend(prop={'size': 14})

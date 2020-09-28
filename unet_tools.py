@@ -21,7 +21,7 @@ def make_large_unet(fac, sr):
         #network=tf.keras.layers.Reshape((600,2))(input_layer)
         
         # build the network, here is your first convolution layer
-        level1=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
+        level1=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
         
         # This layer is a trick of the trade it helps training deeper networks, by keeping gradients close to the same scale
         #network=tf.keras.layers.BatchNormalization()(level1)
@@ -30,12 +30,12 @@ def make_large_unet(fac, sr):
         network=tf.keras.layers.MaxPooling1D()(level1) #300
         
         #Next Block
-        level2=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(network)
+        level2=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level2)
         network=tf.keras.layers.MaxPooling1D()(level2) #150
         
         #Next Block
-        level3=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network)
+        level3=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level3)
         network=tf.keras.layers.MaxPooling1D()(level3) #75
         
@@ -47,17 +47,17 @@ def make_large_unet(fac, sr):
         network=tf.keras.layers.Reshape((75,1))(base_level)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level3=tf.keras.layers.Concatenate()([network,level3]) # N filters, Filter Size, Stride, padding
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level2=tf.keras.layers.Concatenate()([network,level2]) # N filters, Filter Size, Stride, padding
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level1=tf.keras.layers.Concatenate()([network,level1]) # N filters, Filter Size, Stride, padding
         
@@ -73,16 +73,16 @@ def make_large_unet(fac, sr):
         input_layer=tf.keras.layers.Input(shape=(1500,2)) # 1 Channel seismic data
         
         # First block
-        level1=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
+        level1=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.MaxPooling1D()(level1) #750
         
         # Second Block
-        level2=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(network)
+        level2=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(network)
         network=tf.keras.layers.MaxPooling1D()(level2) #375
         network=tf.keras.layers.ZeroPadding1D((0,1))(network)
         
         #Next Block
-        level3=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network)
+        level3=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level3)
         network=tf.keras.layers.MaxPooling1D()(level3) #188
         
@@ -94,19 +94,19 @@ def make_large_unet(fac, sr):
         network=tf.keras.layers.Reshape((188,1))(base_level)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         
         level3=tf.keras.layers.Concatenate()([network,level3]) # N filters, Filter Size, Stride, padding
         level3=tf.keras.layers.Lambda( lambda x: x[:,:-1,:])(level3)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level2=tf.keras.layers.Concatenate()([network,level2]) # N filters, Filter Size, Stride, padding
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level1=tf.keras.layers.Concatenate()([network,level1]) # N filters, Filter Size, Stride, padding
         
@@ -133,7 +133,7 @@ def make_large_unet_drop(fac,sr):
         #network=tf.keras.layers.Reshape((600,2))(input_layer)
         
         # build the network, here is your first convolution layer
-        level1=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
+        level1=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
         
         # This layer is a trick of the trade it helps training deeper networks, by keeping gradients close to the same scale
         #network=tf.keras.layers.BatchNormalization()(level1)
@@ -142,12 +142,12 @@ def make_large_unet_drop(fac,sr):
         network=tf.keras.layers.MaxPooling1D()(level1) #300
         
         #Next Block
-        level2=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(network)
+        level2=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level2)
         network=tf.keras.layers.MaxPooling1D()(level2) #150
         
         #Next Block
-        level3=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network)
+        level3=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level3)
         network=tf.keras.layers.MaxPooling1D()(level3) #75
         
@@ -159,17 +159,17 @@ def make_large_unet_drop(fac,sr):
         network=tf.keras.layers.Reshape((75,1))(base_level)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level3=tf.keras.layers.Concatenate()([network,level3]) # N filters, Filter Size, Stride, padding
         
         # Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level2=tf.keras.layers.Concatenate()([network,level2]) # N filters, Filter Size, Stride, padding
         
         # Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level1=tf.keras.layers.Concatenate()([network,level1]) # N filters, Filter Size, Stride, padding
         
@@ -186,16 +186,16 @@ def make_large_unet_drop(fac,sr):
         input_layer=tf.keras.layers.Input(shape=(1500,2)) # 1 Channel seismic data
         
         # First block
-        level1=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
+        level1=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(input_layer) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.MaxPooling1D()(level1) #750
         
         # Second Block
-        level2=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(network)
+        level2=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(network)
         network=tf.keras.layers.MaxPooling1D()(level2) #375
         network=tf.keras.layers.ZeroPadding1D((0,1))(network)
         
         #Next Block
-        level3=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network)
+        level3=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network)
         #network=tf.keras.layers.BatchNormalization()(level3)
         network=tf.keras.layers.MaxPooling1D()(level3) #188
         
@@ -207,19 +207,19 @@ def make_large_unet_drop(fac,sr):
         network=tf.keras.layers.Reshape((188,1))(base_level)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*128,11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*128),11,activation='relu',padding='same')(network) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         
         level3=tf.keras.layers.Concatenate()([network,level3]) # N filters, Filter Size, Stride, padding
         level3=tf.keras.layers.Lambda( lambda x: x[:,:-1,:])(level3)
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*64,15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*64),15,activation='relu',padding='same')(level3) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level2=tf.keras.layers.Concatenate()([network,level2]) # N filters, Filter Size, Stride, padding
         
         #Upsample and add skip connections
-        network=tf.keras.layers.Conv1D(fac*32,21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
+        network=tf.keras.layers.Conv1D(int(fac*32),21,activation='relu',padding='same')(level2) # N filters, Filter Size, Stride, padding
         network=tf.keras.layers.UpSampling1D()(network)
         level1=tf.keras.layers.Concatenate()([network,level1]) # N filters, Filter Size, Stride, padding
         
@@ -235,5 +235,3 @@ def make_large_unet_drop(fac,sr):
     model.summary()
     
     return model
-
-    input_layer=tf.keras.layers.Input(shape=(1500,2)) # 1 Channel seismic data
